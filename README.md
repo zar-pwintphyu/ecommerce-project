@@ -1,5 +1,7 @@
 # ecommerce-project
 
+python install
+
 pip install django
 
 pip install Pillow
