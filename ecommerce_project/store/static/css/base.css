@@ -1,5 +1,6 @@
 body {
-    background: #f3f3f3;
+    background: white;
+    
 }
 
 .product_title {
@@ -28,3 +29,4 @@ body {
 .custom_div {
     margin-bottom: 20px !important;
 }
+
