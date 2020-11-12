@@ -21,6 +21,7 @@ Create a New Account
           <form method="post">
             {% csrf_token %}
             <p>{{ form | crispy }}</p>
+            
             <button type="submit" name="button" class="btn btn-secondary">Sign Up</button>
           </form>
           <br>
