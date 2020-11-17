@@ -1,5 +1,4 @@
 {% load static %}
-
 <nav class="navbar navbar-expand-md navbar-light bg" >
     <a href="/" class="navbar-brand"><img style="width: 100px;" src=" {% static 'img/ロゴ_完成形2.png' %}" alt=""></a>
     <button type="button" class="navbar-toggler bg-light" data-toggle="collapse" data-target="#nav" name="button"><span class ="navbar-toggler-icon"></span></button>
@@ -10,20 +9,16 @@
         <a class="dropdown-item" href="{% url 'home' %}">全の製品</a>
         {% for category in links %}
         <a class="dropdown-item" href="{{category.get_url}}">{{category.name}}</a>
-        {% endfor %}
-          
+        {% endfor %}         
        </div>
         </li>
-        <li class="nav-item"><a class="nav-link text-light text-uppercase font-weight-bold px-3" href=""> Contact</a> </li>
-        <li class="nav-item"><a class="nav-link text-light text-uppercase font-weight-bold px-3" href=""> About</a> </li>
         {% if request.user.is_authenticated and request.user.first_name %}
       <li class="nav-item dropdown">
         <a class="nav-link text-light text-uppercase font-weight-bold px-3 dropdown-toggle" data-toggle="dropdown">
           Welcome, {{ request.user.first_name }} <i class="fas fa-user circle"></i>
         </a>
         <div class="dropdown-menu">
-          <a class="dropdown-item" href="">Order History</a>
-
+          <a class="dropdown-item" href="{% url 'order_history' %}">Order History</a>
         </div>
       </li>
       <li class="nav-item">
@@ -43,27 +38,22 @@
         </a>
       </li>
     {% endif %}
-
     {% if item_count > 0 %}
         <li class="nav-item">
         <a class="nav-link text-light text-uppercase font-weight-bold px-3" href="{% url 'cart_detail' %}"> 
         <i class = "fas fa-shopping-cart"></i>({{item_count}})
         </a> 
-
           {% endif %}
-
         </li>
       </ul>
 
-      <form class="form-inline ml-3">
-        <div class="input-group">
-          <input type ="text" class="form-control" placeholder="Search">
-          <div claass="input-group-append">
-            <button type ="button" name="button" class="btn btn-dark"><i class="fas fa-search"></i></button>
-          </div>
-        </div>
-      
-      </form>
+      <form class="form-inline ml-3" action="{% url 'search' %}", method="GET">
+    <div class="input-group">
+      <input type="text" name="title" class="form-control" placeholder="Search">
+      <div class="input-group-append">
+        <button type="submit" class="btn btn-warning"><i class="fas fa-search"></i></button>
       </div>
-   
-   </nav>
+    </div>
+  </form>
+  </div>
+</nav>

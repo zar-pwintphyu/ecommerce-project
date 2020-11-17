@@ -1,29 +1,40 @@
-from django.shortcuts import render,get_object_or_404,redirect
-from .models import Category,Product,Cart,CartItem,Order,OrderItem
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Category, Product, Cart, CartItem, Order, OrderItem, Review
 from django.core.exceptions import ObjectDoesNotExist
-import stripe 
+import stripe
 from django.conf import settings
 from django.contrib.auth.models import Group, User
 from .forms import SignUpForm
 from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import login,authenticate,logout
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator, EmptyPage, InvalidPage
+from django.template.loader import get_template
+from django.core.mail import EmailMessage
 
 
-
-
-
-
-def home(request,category_slug=None):
+def home(request, category_slug=None):
     category_page = None
-    products = None
-    if category_slug !=None:
+    products_list = None
+    if category_slug != None:
         category_page = get_object_or_404(Category, slug=category_slug)
-        products = Product.objects.filter(category=category_page, available=True)
+        products_list = Product.objects.filter(category=category_page, available=True)
     else:
-        products = Product.objects.all().filter(available=True)
-    return render(request,'home.html',{'category': category_page,'products':products})
+        products_list = Product.objects.all().filter(available=True)
 
+    paginator = Paginator(products_list, 4)
+
+    try:
+        page = int(request.GET.get('page', '1'))
+    except:
+        page = 1
+
+    try:
+        products = paginator.page(page)
+    except(EmptyPage, InvalidPage):
+        products = paginator.page(paginator.num_pages)
+
+    return render(request, 'home.html', {'category': category_page, 'products': products})
 
 
 def productPage(request, category_slug, product_slug):
@@ -31,17 +42,23 @@ def productPage(request, category_slug, product_slug):
         product = Product.objects.get(category__slug=category_slug, slug=product_slug)
     except Exception as e:
         raise e
-    return render(request, 'product.html', {'product': product})
 
+    if request.method == 'POST' and request.user.is_authenticated and request.POST['content'].strip() != '':
+        Review.objects.create(product=product,
+                              user=request.user,
+                              content=request.POST['content'])
 
+    reviews = Review.objects.filter(product=product)
 
-# Create your views here.
+    return render(request, 'product.html', {'product': product, 'reviews': reviews})
+
 
 def _cart_id(request):
     cart = request.session.session_key
     if not cart:
         cart = request.session.create()
     return cart
+
 
 def add_cart(request, product_id):
     product = Product.objects.get(id=product_id)
@@ -67,6 +84,7 @@ def add_cart(request, product_id):
 
     return redirect('cart_detail')
 
+
 def cart_detail(request, total=0, counter=0, cart_items=None):
     try:
         cart = Cart.objects.get(cart_id=_cart_id(request))
@@ -78,8 +96,8 @@ def cart_detail(request, total=0, counter=0, cart_items=None):
         pass
 
     stripe.api_key = settings.STRIPE_SECRET_KEY
-    stripe_total = int(total * 200)
-    description = 'IRpark - New Order'
+    stripe_total = int(total * 100)
+    description = 'Kaeruba - New Order'
     data_key = settings.STRIPE_PUBLISHABLE_KEY
     if request.method == 'POST':
         try:
@@ -96,16 +114,16 @@ def cart_detail(request, total=0, counter=0, cart_items=None):
             shippingPostcode = request.POST['stripeShippingAddressZip']
             shippingCountry = request.POST['stripeShippingAddressCountryCode']
             customer = stripe.Customer.create(
-                email = email,
-                source = token
+                email=email,
+                source=token
             )
-            charge = stripe.Charge.create( 
+            charge = stripe.Charge.create(
                 amount=stripe_total,
                 currency='usd',
                 description=description,
                 customer=customer.id
             )
-             # Creating the order
+            # Creating the order
             try:
                 order_details = Order.objects.create(
                     token=token,
@@ -139,16 +157,22 @@ def cart_detail(request, total=0, counter=0, cart_items=None):
                     order_item.delete()
 
                     # print a message when the order is created
-                    print('the order has been created')                
+                    print('the order has been created')
+                try:
+                    sendEmail(order_details.id)
+                    print('The order email has been sent')
+                except IOError as e:
+                    return e
+
                 return redirect('thanks_page', order_details.id)
             except ObjectDoesNotExist:
                 pass
 
         except stripe.error.CardError as e:
-            return False,e
-    
+            return False, e
 
     return render(request, 'cart.html', dict(cart_items=cart_items, total=total, counter=counter, data_key=data_key, stripe_total=stripe_total, description=description))
+
 
 def cart_remove(request, product_id):
     cart = Cart.objects.get(cart_id=_cart_id(request))
@@ -175,6 +199,7 @@ def thanks_page(request, order_id):
         customer_order = get_object_or_404(Order, id=order_id)
     return render(request, 'thankyou.html', {'customer_order': customer_order})
 
+
 def signupView(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
@@ -184,9 +209,11 @@ def signupView(request):
             signup_user = User.objects.get(username=username)
             customer_group = Group.objects.get(name='Customer')
             customer_group.user_set.add(signup_user)
+            login(request, signup_user)
     else:
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
+
 
 def signinView(request):
     if request.method == 'POST':
@@ -210,8 +237,28 @@ def signoutView(request):
     return redirect('signin')
 
 
+@login_required(redirect_field_name='next', login_url='signin')
+def orderHistory(request):
+    if request.user.is_authenticated:
+        email = str(request.user.email)
+        order_details = Order.objects.filter(emailAddress=email)
+        print(email)
+        print(order_details)
+    return render(request, 'orders_list.html', {'order_details': order_details})
 
 
+@login_required(redirect_field_name='next', login_url='signin')
+def viewOrder(request, order_id):
+    if request.user.is_authenticated:
+        email = str(request.user.email)
+        order = Order.objects.get(id=order_id, emailAddress=email)
+        order_items = OrderItem.objects.filter(order=order)
+    return render(request, 'order_detail.html', {'order': order, 'order_items': order_items})
+
+
+def search(request):
+    products = Product.objects.filter(name__contains=request.GET['title'])
+    return render(request, 'home.html', {'products': products})
 
 
 

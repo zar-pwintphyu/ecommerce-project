@@ -41,6 +41,9 @@ INSTALLED_APPS = [
     'store',
     'stripe',
     'crispy_forms',
+    'widget_tweaks',
+    
+
 ]
 
 MIDDLEWARE = [
@@ -134,3 +137,6 @@ STRIPE_PUBLISHABLE_KEY ='pk_test_51HZob8EQXHuFCj5WUvppMiQshybVbzg0bt0FuoKGDfkSqv
 STRIPE_SECRET_KEY = 'sk_test_51HZob8EQXHuFCj5Wvuc6IleQBjTGn6d16jR2PIRhra6c4Ui7Hyxoal1gje6YOKxodjbvfl9lmVRQpxoD5KNoFMtI00pdGu8muo'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
+
+
+
