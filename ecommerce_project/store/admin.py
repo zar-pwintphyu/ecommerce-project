@@ -1,15 +1,15 @@
 from django.contrib import admin
 from .models import Category, Product, Order, OrderItem, Review
-# Register your models here.
+from .forms import SignUpForm
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 
+class UserAdmin(admin.ModelAdmin):
+    list_display = ('first_name', 'last_name', 'username','email','is_active', 'date_joined', 'is_staff')
+    
 
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug']
-    prepopulated_fields = {'slug': ('name',)}
-
-
-admin.site.register(Category, CategoryAdmin)
-
+admin.site.unregister(User)
+admin.site.register(User, UserAdmin)
 
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['name', 'price', 'stock', 'available', 'created', 'updated']
@@ -33,6 +33,8 @@ class OrderItemAdmin(admin.TabularInline):
     max_num = 0
 
 
+    
+   
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['id', 'billingName', 'emailAddress', 'created']

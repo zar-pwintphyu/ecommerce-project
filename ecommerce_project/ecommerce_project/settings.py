@@ -42,6 +42,9 @@ INSTALLED_APPS = [
     'stripe',
     'crispy_forms',
     'widget_tweaks',
+    'phonenumber_field',
+
+    
     
 
 ]
@@ -138,5 +141,14 @@ STRIPE_SECRET_KEY = 'sk_test_51HZob8EQXHuFCj5Wvuc6IleQBjTGn6d16jR2PIRhra6c4Ui7Hy
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
 
+DEFAULT_FROM_EMAIL = 'Infoma Admin<no-reply@infoma.co.nz>'
 
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'zarpwintphyu000@gmail.com'
+EMAIL_HOST_PASSWORD = '24121991zpp'
+EMAIL_PORT = 587
 

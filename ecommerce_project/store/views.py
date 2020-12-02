@@ -11,6 +11,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, InvalidPage
 from django.template.loader import get_template
 from django.core.mail import EmailMessage
+from django.core.mail import send_mail
+
 
 
 def home(request, category_slug=None):
@@ -201,19 +203,26 @@ def thanks_page(request, order_id):
 
 
 def signupView(request):
-    if request.method == 'POST':
+    
+    if request.method == 'POST' :
         form = SignUpForm(request.POST)
+
         if form.is_valid():
             form.save()
-            username = form.cleaned_data.get('username')
+            username=form.cleaned_data['username']
+            message="Your account has been created and it is ready to use."
+            email=form.cleaned_data['email']
+            msg=send_mail(username,message,email,[email])
             signup_user = User.objects.get(username=username)
             customer_group = Group.objects.get(name='Customer')
             customer_group.user_set.add(signup_user)
             login(request, signup_user)
+            
     else:
         form = SignUpForm()
     return render(request, 'signup.html', {'form': form})
 
+    
 
 def signinView(request):
     if request.method == 'POST':
@@ -259,6 +268,5 @@ def viewOrder(request, order_id):
 def search(request):
     products = Product.objects.filter(name__contains=request.GET['title'])
     return render(request, 'home.html', {'products': products})
-
 
 
